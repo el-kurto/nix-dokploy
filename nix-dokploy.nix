@@ -82,6 +82,24 @@ in {
           Changing this may cause compatibility issues with Dokploy.
         '';
       };
+
+      environment = lib.mkOption {
+        type = lib.types.attrsOf lib.types.str;
+        default = {};
+        description = ''
+          Environment variables to pass to the Traefik container.
+          Can be used to pass credentials for certificate providers (e.g. CF_DNS_API_TOKEN).
+        '';
+      };
+
+      environmentFile = lib.mkOption {
+        type = lib.types.nullOr lib.types.path;
+        default = null;
+        description = ''
+          Path to a file containing environment variables to pass to the Traefik container.
+          Can be used to pass credentials for certificate providers (e.g. CF_DNS_API_TOKEN).
+        '';
+      };
     };
 
     swarm = {
@@ -187,11 +205,14 @@ in {
         ExecStart = let
           script = pkgs.writeShellApplication {
             name = "dokploy-stack-start";
-            excludeShellChecks = [ "SC2034" ];
-            runtimeInputs = [pkgs.curl pkgs.docker pkgs.hostname pkgs.gawk] ++
-              (if cfg.swarm.advertiseAddress ? extraPackages
-               then cfg.swarm.advertiseAddress.extraPackages
-               else []);
+            excludeShellChecks = ["SC2034"];
+            runtimeInputs =
+              [pkgs.curl pkgs.docker pkgs.hostname pkgs.gawk]
+              ++ (
+                if cfg.swarm.advertiseAddress ? extraPackages
+                then cfg.swarm.advertiseAddress.extraPackages
+                else []
+              );
             text = ''
               # Get advertise address based on configuration
               ${
@@ -223,13 +244,17 @@ in {
               current_addr=$(docker info --format '{{.Swarm.NodeAddr}}' 2>/dev/null || echo "")
 
               # Leave swarm if auto-recreate is enabled and address changed
-              ${if cfg.swarm.autoRecreate then ''
-                if [[ "$swarm_active" == "active" ]] && [[ "$current_addr" != "$advertise_addr" ]]; then
-                  echo "Advertise address changed ($current_addr -> $advertise_addr), recreating swarm..."
-                  docker swarm leave --force
-                  swarm_active="inactive"
-                fi
-              '' else ""}
+              ${
+                if cfg.swarm.autoRecreate
+                then ''
+                  if [[ "$swarm_active" == "active" ]] && [[ "$current_addr" != "$advertise_addr" ]]; then
+                    echo "Advertise address changed ($current_addr -> $advertise_addr), recreating swarm..."
+                    docker swarm leave --force
+                    swarm_active="inactive"
+                  fi
+                ''
+                else ""
+              }
 
               # Initialize swarm if inactive
               if [[ "$swarm_active" != "active" ]]; then
@@ -302,6 +327,8 @@ in {
                   -p 80:80/tcp \
                   -p 443:443/tcp \
                   -p 443:443/udp \
+                  ${lib.concatStringsSep " \\\n" (lib.mapAttrsToList (k: v: "--env ${lib.escapeShellArg "${k}=${v}"}") cfg.traefik.environment)} \
+                  ${lib.optionalString (cfg.traefik.environmentFile != null) "--env-file ${cfg.traefik.environmentFile} \\"}
                   ${cfg.traefik.image}
               fi
             '';

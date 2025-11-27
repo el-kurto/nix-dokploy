@@ -61,7 +61,7 @@ That's it! Dokploy will be available at `http://your-server-ip:3000`
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `services.dokploy.dataDir` | `/var/lib/dokploy` | Data directory for Dokploy |
+| `services.dokploy.dataDir` | `/etc/dokploy` | Data directory for Dokploy |
 | `services.dokploy.image` | `dokploy/dokploy:latest` | Dokploy Docker image |
 | `services.dokploy.port` | `"3000:3000"` | Port binding for web UI (⚠️ see note) |
 | `services.dokploy.traefik.image` | `traefik:v3.5.0` | Traefik Docker image |

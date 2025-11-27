@@ -19,7 +19,7 @@ in {
 
     dataDir = lib.mkOption {
       type = lib.types.str;
-      default = "/var/lib/dokploy";
+      default = "/etc/dokploy";
       description = "Directory to store Dokploy data";
     };
 

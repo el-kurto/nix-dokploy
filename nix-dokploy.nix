@@ -282,14 +282,14 @@ in {
 
               ADVERTISE_ADDR="$advertise_addr" \
               POSTGRES_PASSWORD="${cfg.database.password}" \
-              docker stack deploy -c ${stackFile} dokploy
+              docker stack deploy -c ${stackFile} --detach=false dokploy
             '';
           };
         in "${script}/bin/dokploy-stack-start";
 
         ExecStop = let
           script = pkgs.writeShellScript "dokploy-stack-stop" ''
-            ${pkgs.docker}/bin/docker stack rm dokploy || true
+            ${pkgs.docker}/bin/docker stack rm --detach=false dokploy || true
           '';
         in "${script}";
       };

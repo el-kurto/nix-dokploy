@@ -1,6 +1,8 @@
 # Docker stack configuration for Dokploy
-{ cfg, lib }:
 {
+  cfg,
+  lib,
+}: {
   version = "3.8";
 
   services = {
@@ -12,7 +14,7 @@
         POSTGRES_DB = "dokploy";
       };
       volumes = [
-        "dokploy-postgres-database:/var/lib/postgresql/data"
+        "dokploy-postgres:/var/lib/postgresql/data"
       ];
       networks = {
         dokploy-network = {
@@ -28,7 +30,7 @@
     redis = {
       image = "redis:7";
       volumes = [
-        "redis-data-volume:/data"
+        "dokploy-redis:/data"
       ];
       networks = {
         dokploy-network = {
@@ -41,34 +43,52 @@
       };
     };
 
-    dokploy = {
-      image = cfg.image;
-      environment = {
-        ADVERTISE_ADDR = "\${ADVERTISE_ADDR}";
-      };
-      networks = {
-        dokploy-network = {
-          aliases = ["dokploy-app"];
+    dokploy =
+      {
+        inherit (cfg) image;
+        environment = {
+          ADVERTISE_ADDR = "\${ADVERTISE_ADDR}";
         };
-      };
-      volumes = [
-        "/var/run/docker.sock:/var/run/docker.sock"
-        "${cfg.dataDir}:/etc/dokploy"
-        "dokploy-docker-config:/root/.docker"
-      ];
-      depends_on = ["postgres" "redis"];
-      deploy = {
-        replicas = 1;
-        placement.constraints = ["node.role == manager"];
-        update_config = {
-          parallelism = 1;
-          order = "stop-first";
+        networks = {
+          dokploy-network = {
+            aliases = ["dokploy-app"];
+          };
         };
-        restart_policy.condition = "any";
+        volumes = [
+          "/var/run/docker.sock:/var/run/docker.sock"
+          "${cfg.dataDir}:/etc/dokploy"
+          "dokploy:/root/.docker"
+        ];
+        depends_on = ["postgres" "redis"];
+        deploy =
+          {
+            replicas = 1;
+            placement.constraints = ["node.role == manager"];
+            update_config = {
+              parallelism = 1;
+              order = "stop-first";
+            };
+            restart_policy.condition = "any";
+          }
+          // lib.optionalAttrs cfg.lxc {
+            endpoint_mode = "dnsrr";
+          };
+      }
+      // lib.optionalAttrs (cfg.port != null) {
+        ports = let
+          parts = lib.splitString ":" cfg.port;
+          len = builtins.length parts;
+        in [
+          ({
+              target = lib.strings.toInt (lib.last parts);
+              published = lib.strings.toInt (builtins.elemAt parts (len - 2));
+              mode = "host";
+            }
+            // lib.optionalAttrs (len == 3) {
+              host_ip = builtins.head parts;
+            })
+        ];
       };
-    } // lib.optionalAttrs (cfg.port != null) {
-      ports = [ cfg.port ];
-    };
   };
 
   networks = {
@@ -80,8 +100,8 @@
   };
 
   volumes = {
-    dokploy-postgres-database = {};
-    redis-data-volume = {};
-    dokploy-docker-config = {};
+    dokploy-postgres = {};
+    dokploy-redis = {};
+    dokploy = {};
   };
 }

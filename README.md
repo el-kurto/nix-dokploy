@@ -61,11 +61,13 @@ That's it! Dokploy will be available at `http://your-server-ip:3000`
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `services.dokploy.dataDir` | `/var/lib/dokploy` | Data directory for Dokploy |
+| `services.dokploy.dataDir` | `/etc/dokploy` | Data directory for Dokploy |
 | `services.dokploy.image` | `dokploy/dokploy:latest` | Dokploy Docker image |
 | `services.dokploy.port` | `"3000:3000"` | Port binding for web UI (⚠️ see note) |
-| `services.dokploy.traefik.image` | `traefik:v3.5.0` | Traefik Docker image |
-| `services.dokploy.swarm.autoRecreate` | `false` | Auto-recreate swarm when IP change is detected during service restart |
+| `services.dokploy.lxc` | `false` | Enable LXC compatibility (required for Proxmox) |
+| `services.dokploy.traefik.image` | `traefik:v3.6.1` | Traefik Docker image |
+| `services.dokploy.traefik.extraArgs` | `[]` | Extra arguments for Traefik container |
+| `services.dokploy.swarm.autoRecreate` | `false` | Auto-recreate swarm when IP change is detected |
 
 ### Swarm Advertise Address
 
@@ -119,6 +121,19 @@ services.dokploy.port = "3000:3000";
 
 # Disable direct port access (access through Traefik only)
 services.dokploy.port = null;
+```
+
+### Traefik Configuration
+
+You can pass extra arguments to the Traefik container using `traefik.extraArgs`. This is useful for passing environment variables or mounting additional volumes.
+
+```nix
+services.dokploy.traefik.extraArgs = [
+  "--log.level=DEBUG"
+  "-e CF_API_EMAIL=user@example.com"
+  "-e CF_API_KEY=your_api_key"
+  "-v /path/to/certs:/certs"
+];
 ```
 
 ## 📄 License

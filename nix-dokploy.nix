@@ -178,7 +178,7 @@ in {
         message = "Dokploy requires docker to be enabled";
       }
       {
-        assertion = config.virtualisation.docker.daemon.settings.live-restore == false;
+        assertion = !config.virtualisation.docker.daemon.settings.live-restore;
         message = "Dokploy stack requires Docker daemon setting: `live-restore = false`";
       }
       {
@@ -209,9 +209,7 @@ in {
             runtimeInputs =
               [pkgs.curl pkgs.docker pkgs.hostname pkgs.gawk]
               ++ (
-                if cfg.swarm.advertiseAddress ? extraPackages
-                then cfg.swarm.advertiseAddress.extraPackages
-                else []
+                cfg.swarm.advertiseAddress.extraPackages or []
               );
             text = ''
               # Get advertise address based on configuration

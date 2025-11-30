@@ -28,11 +28,12 @@
       ADVERTISE_ADDR="$advertise_addr" \
       docker stack deploy -c ${stackFile} --detach=false dokploy
     ''
-    else lib.warn "nix-dokploy: database.useInsecureHardcodedPassword is enabled. This uses a well-known password from Dokploy's source code. Migrate to database.passwordFile as soon as possible." ''
-      ADVERTISE_ADDR="$advertise_addr" \
-      POSTGRES_PASSWORD="amukds4wi9001583845717ad2" \
-      docker stack deploy -c ${stackFile} --detach=false dokploy
-    '';
+    else
+      lib.warn "nix-dokploy: database.useInsecureHardcodedPassword is enabled. This uses a well-known password from Dokploy's source code. Migrate to database.passwordFile as soon as possible." ''
+        ADVERTISE_ADDR="$advertise_addr" \
+        POSTGRES_PASSWORD="amukds4wi9001583845717ad2" \
+        docker stack deploy -c ${stackFile} --detach=false dokploy
+      '';
 in {
   options.services.dokploy = {
     enable = lib.mkOption {
@@ -270,7 +271,7 @@ in {
         message = "Dokploy requires docker to be enabled";
       }
       {
-        assertion = config.virtualisation.docker.daemon.settings.live-restore == false;
+        assertion = !config.virtualisation.docker.daemon.settings.live-restore;
         message = "Dokploy stack requires Docker daemon setting: `live-restore = false`";
       }
       {
@@ -302,33 +303,38 @@ in {
       containerCertDir = "/etc/dokploy/traefik/dynamic/certificates";
 
       certRules = lib.concatLists (lib.mapAttrsToList (name: cert: let
-        dir = "${cfg.dataDir}/traefik/dynamic/certificates/${name}";
-        certYaml = yamlFormat.generate "certificate-${name}.yml" {
-          tls.certificates = [
-            {
-              certFile = "${containerCertDir}/${name}/chain.crt";
-              keyFile = "${containerCertDir}/${name}/privkey.key";
-            }
-          ];
-        };
-      in [
-        "d ${dir} 0755 root root -"
-        "C+ ${dir}/chain.crt 0400 root root - ${cert.certFile}"
-        "C+ ${dir}/privkey.key 0400 root root - ${cert.keyFile}"
-        "C+ ${dir}/certificate.yml - - - - ${certYaml}"
-      ]) cfg.traefik.certificates);
+          dir = "${cfg.dataDir}/traefik/dynamic/certificates/${name}";
+          certYaml = yamlFormat.generate "certificate-${name}.yml" {
+            tls.certificates = [
+              {
+                certFile = "${containerCertDir}/${name}/chain.crt";
+                keyFile = "${containerCertDir}/${name}/privkey.key";
+              }
+            ];
+          };
+        in [
+          "d ${dir} 0755 root root -"
+          "C+ ${dir}/chain.crt 0400 root root - ${cert.certFile}"
+          "C+ ${dir}/privkey.key 0400 root root - ${cert.keyFile}"
+          "C+ ${dir}/certificate.yml - - - - ${certYaml}"
+        ])
+        cfg.traefik.certificates);
 
-      dynamicConfigRules = lib.mapAttrsToList (name: value:
-        "C+ ${cfg.dataDir}/traefik/dynamic/${name}.yml - - - - ${yamlFormat.generate "${name}.yml" value}"
-      ) cfg.traefik.dynamicConfig;
+      dynamicConfigRules =
+        lib.mapAttrsToList (
+          name: value: "C+ ${cfg.dataDir}/traefik/dynamic/${name}.yml - - - - ${yamlFormat.generate "${name}.yml" value}"
+        )
+        cfg.traefik.dynamicConfig;
 
       filesDirRules = lib.optionals (cfg.traefik.files != {}) [
         "d ${cfg.dataDir}/traefik/dynamic/files 0755 root root -"
       ];
 
-      filesRules = lib.mapAttrsToList (name: value:
-        "C+ ${cfg.dataDir}/traefik/dynamic/files/${name} - - - - ${value}"
-      ) cfg.traefik.files;
+      filesRules =
+        lib.mapAttrsToList (
+          name: value: "C+ ${cfg.dataDir}/traefik/dynamic/files/${name} - - - - ${value}"
+        )
+        cfg.traefik.files;
     in
       [
         "d ${cfg.dataDir} 0777 root root -"
@@ -359,9 +365,7 @@ in {
             runtimeInputs =
               [pkgs.curl pkgs.docker pkgs.hostname pkgs.gawk]
               ++ (
-                if cfg.swarm.advertiseAddress ? extraPackages
-                then cfg.swarm.advertiseAddress.extraPackages
-                else []
+                cfg.swarm.advertiseAddress.extraPackages or []
               );
             text = ''
               # Get advertise address based on configuration

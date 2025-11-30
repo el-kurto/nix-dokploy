@@ -49,6 +49,16 @@ in {
       '';
     };
 
+    lxc = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = ''
+        Enable compatibility mode for LXC containers (e.g. Proxmox).
+        Adds "endpoint_mode: dnsrr" to the Dokploy service deployment configuration.
+        This is required for Docker Swarm networking to work correctly inside LXC.
+      '';
+    };
+
     port = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = "3000:3000";

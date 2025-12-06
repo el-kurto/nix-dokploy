@@ -41,11 +41,11 @@ in {
 
     image = lib.mkOption {
       type = lib.types.str;
-      default = "dokploy/dokploy:latest";
+      default = "dokploy/dokploy:v0.25.11";
       description = ''
         Dokploy Docker image to use.
-        Note: Check Dokploy's installation script for compatible Traefik versions
-        when changing this.
+        Pin to a specific version for reproducibility. Check releases at:
+        https://github.com/Dokploy/dokploy/releases
       '';
     };
 

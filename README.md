@@ -62,9 +62,9 @@ That's it! Dokploy will be available at `http://your-server-ip:3000`
 | Option | Default | Description |
 |--------|---------|-------------|
 | `services.dokploy.dataDir` | `/var/lib/dokploy` | Data directory for Dokploy |
-| `services.dokploy.image` | `dokploy/dokploy:latest` | Dokploy Docker image |
+| `services.dokploy.image` | `dokploy/dokploy:v0.25.11` | Dokploy Docker image |
 | `services.dokploy.port` | `"3000:3000"` | Port binding for web UI (⚠️ see note) |
-| `services.dokploy.traefik.image` | `traefik:v3.5.0` | Traefik Docker image |
+| `services.dokploy.traefik.image` | `traefik:v3.6.1` | Traefik Docker image |
 | `services.dokploy.swarm.autoRecreate` | `false` | Auto-recreate swarm when IP change is detected during service restart |
 
 ### Swarm Advertise Address

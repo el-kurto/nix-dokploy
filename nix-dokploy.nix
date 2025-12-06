@@ -173,6 +173,8 @@ in {
       "d ${cfg.dataDir} 0777 root root -"
       "d ${cfg.dataDir}/traefik 0755 root root -"
       "d ${cfg.dataDir}/traefik/dynamic 0755 root root -"
+    ] ++ lib.optionals (cfg.dataDir != "/etc/dokploy") [
+      "L /etc/dokploy - - - - ${cfg.dataDir}"
     ];
 
     systemd.services.dokploy-stack = {

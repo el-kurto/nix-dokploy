@@ -8,9 +8,15 @@
       image = "postgres:16";
       environment = {
         POSTGRES_USER = "dokploy";
-        POSTGRES_PASSWORD = "\${POSTGRES_PASSWORD}";
+        POSTGRES_PASSWORD_FILE = "/run/secrets/postgres_password";
         POSTGRES_DB = "dokploy";
       };
+      secrets = [
+        {
+          source = "postgres_password";
+          target = "/run/secrets/postgres_password";
+        }
+      ];
       volumes = [
         "dokploy-postgres-database:/var/lib/postgresql/data"
       ];
@@ -45,7 +51,14 @@
       image = cfg.image;
       environment = {
         ADVERTISE_ADDR = "\${ADVERTISE_ADDR}";
+        POSTGRES_PASSWORD_FILE = "/run/secrets/postgres_password";
       } // cfg.environment;
+      secrets = [
+        {
+          source = "postgres_password";
+          target = "/run/secrets/postgres_password";
+        }
+      ];
       networks = {
         dokploy-network = {
           aliases = ["dokploy-app"];
@@ -92,6 +105,13 @@
       name = "dokploy-network";
       driver = "overlay";
       attachable = true;
+    };
+  };
+
+  secrets = {
+    postgres_password = {
+      external = true;
+      name = "dokploy_postgres_password";
     };
   };
 

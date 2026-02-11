@@ -66,6 +66,7 @@ That's it! Dokploy will be available at `http://your-server-ip:3000`
 | `services.dokploy.port` | `"3000:3000"` | Port binding for web UI (⚠️ see note) |
 | `services.dokploy.hostPortMode` | `false` | Use "host" port mode instead of "ingress" (bypasses Swarm routing mesh) |
 | `services.dokploy.lxc` | `false` | Enable LXC compatibility (required for Proxmox) |
+| `services.dokploy.database.passwordFile` | `null` | Path to file containing the PostgreSQL password (auto-generated if unset) |
 | `services.dokploy.environment` | `{}` | Environment variables for Dokploy container |
 | `services.dokploy.traefik.image` | `traefik:v3.6.7` | Traefik Docker image |
 | `services.dokploy.traefik.extraArgs` | `[]` | Extra `docker run` flags for Traefik container |
@@ -145,6 +146,44 @@ services.dokploy.traefik.extraArgs = [
   "-e CF_API_KEY=your_api_key"
   "-v /path/to/certs:/certs"
 ];
+```
+
+### Database Password
+
+The PostgreSQL password is stored as a Docker secret. By default, a random password is generated automatically on first deploy.
+
+To manage the password yourself (recommended for production):
+
+```bash
+openssl rand -base64 32 > /var/lib/secrets/dokploy-db-password
+```
+
+```nix
+services.dokploy.database.passwordFile = "/var/lib/secrets/dokploy-db-password";
+```
+
+**Upgrading from the old hardcoded password:** Versions before v0.26.6 used a hardcoded PostgreSQL password (`amukds4wi9001583845717ad2`). To migrate:
+
+1. Generate a new password file on the host:
+   ```bash
+   openssl rand -base64 32 > /var/lib/secrets/dokploy-db-password
+   ```
+
+2. Change the password in the running PostgreSQL container:
+   ```bash
+   NEW_PW=$(cat /var/lib/secrets/dokploy-db-password)
+   docker exec -e PGPASSWORD=amukds4wi9001583845717ad2 \
+     $(docker ps --filter "name=dokploy_postgres" -q) \
+     psql -U dokploy -d dokploy -v "pw=$NEW_PW" \
+     -c "ALTER USER dokploy WITH PASSWORD :'pw'"
+   ```
+
+3. Deploy with `database.passwordFile` set to the new password file.
+
+**Recovery:** If the password gets into a bad state, SSH to the host and get a local superuser shell (no password needed):
+
+```bash
+docker exec -it $(docker ps --filter "name=dokploy_postgres" -q) psql -U dokploy -d dokploy
 ```
 
 ## 📄 License

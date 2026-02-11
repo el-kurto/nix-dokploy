@@ -79,6 +79,9 @@ Dokploy will be available at `http://your-server-ip:3000`
 | `services.dokploy.environment` | `{}` | Environment variables for Dokploy container |
 | `services.dokploy.traefik.image` | `traefik:v3.6.7` | Traefik Docker image |
 | `services.dokploy.traefik.extraArgs` | `[]` | Extra `docker run` flags for Traefik container |
+| `services.dokploy.traefik.certificates` | `{}` | TLS certificate pairs to install for Traefik (see below) |
+| `services.dokploy.traefik.dynamicConfig` | `{}` | Traefik dynamic config files as Nix attrsets (see below) |
+| `services.dokploy.traefik.files` | `{}` | Files to inject into the Traefik dynamic config directory (see below) |
 | `services.dokploy.swarm.autoRecreate` | `false` | Auto-recreate swarm when IP change is detected during service restart |
 
 ### Swarm Advertise Address
@@ -222,6 +225,41 @@ If the password gets into a bad state, you can get a local superuser shell (no p
 
 ```bash
 docker exec -it $(docker ps --filter "name=dokploy_postgres" -q) psql -U dokploy -d dokploy
+```
+
+### Traefik TLS Certificates
+
+Install TLS certificate pairs following Dokploy's directory convention. Each entry creates a subdirectory under `traefik/dynamic/certificates/<name>/` with `chain.crt`, `privkey.key`, and a generated `certificate.yml`.
+
+```nix
+services.dokploy.traefik.certificates."cloudflare-origin" = {
+  certFile = "/var/lib/secrets/cloudflare-origin-ca.pem";
+  keyFile = "/var/lib/secrets/cloudflare-origin-ca-key.pem";
+};
+```
+
+### Traefik Dynamic Configuration
+
+Generate arbitrary Traefik dynamic configuration YAML files from Nix attrsets. Each key becomes a `.yml` file in the Traefik dynamic config directory.
+
+```nix
+services.dokploy.traefik.dynamicConfig."cloudflare-client-auth" = {
+  tls.options.default.clientAuth = {
+    caFiles = [ "/etc/dokploy/traefik/dynamic/files/cloudflare-origin-pull-ca.pem" ];
+    clientAuthType = "RequireAndVerifyClientCert";
+  };
+};
+```
+
+### Traefik Files
+
+Inject files into the Traefik dynamic config directory. Files are placed at `traefik/dynamic/files/<name>` on the host and accessible in the container at `/etc/dokploy/traefik/dynamic/files/<name>`.
+
+```nix
+services.dokploy.traefik.files."cloudflare-origin-pull-ca.pem" = pkgs.fetchurl {
+  url = "https://developers.cloudflare.com/ssl/static/authenticated_origin_pull_ca.pem";
+  sha256 = "...";
+};
 ```
 
 ## License

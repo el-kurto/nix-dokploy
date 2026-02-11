@@ -152,6 +152,46 @@ in {
           Can be used to pass environment variables, volumes, etc.
         '';
       };
+
+      certificates = lib.mkOption {
+        type = lib.types.attrsOf (lib.types.submodule {
+          options = {
+            certFile = lib.mkOption {
+              type = lib.types.path;
+              description = "Path to the certificate chain file on the host.";
+            };
+            keyFile = lib.mkOption {
+              type = lib.types.path;
+              description = "Path to the private key file on the host.";
+            };
+          };
+        });
+        default = {};
+        description = ''
+          TLS certificates to install for Traefik.
+          Each certificate is stored following Dokploy's convention under
+          the traefik/dynamic/certificates/ directory.
+        '';
+      };
+
+      dynamicConfig = lib.mkOption {
+        type = lib.types.attrsOf yamlFormat.type;
+        default = {};
+        description = ''
+          Traefik dynamic configuration files as Nix attribute sets.
+          Each key generates a YAML file in the Traefik dynamic config directory.
+        '';
+      };
+
+      files = lib.mkOption {
+        type = lib.types.attrsOf lib.types.path;
+        default = {};
+        description = ''
+          Files to make available inside the Traefik dynamic config directory.
+          Each key is the filename, value is the source path on the host.
+          Files are accessible in the container at /etc/dokploy/traefik/dynamic/files/<name>.
+        '';
+      };
     };
 
     swarm = {
@@ -258,7 +298,40 @@ in {
       }
     ];
 
-    systemd.tmpfiles.rules =
+    systemd.tmpfiles.rules = let
+      containerCertDir = "/etc/dokploy/traefik/dynamic/certificates";
+
+      certRules = lib.concatLists (lib.mapAttrsToList (name: cert: let
+        dir = "${cfg.dataDir}/traefik/dynamic/certificates/${name}";
+        certYaml = yamlFormat.generate "certificate-${name}.yml" {
+          tls.certificates = [
+            {
+              certFile = "${containerCertDir}/${name}/chain.crt";
+              keyFile = "${containerCertDir}/${name}/privkey.key";
+            }
+          ];
+        };
+      in [
+        "d ${dir} 0755 root root -"
+        "C+ ${dir}/chain.crt 0400 root root - ${cert.certFile}"
+        "C+ ${dir}/privkey.key 0400 root root - ${cert.keyFile}"
+        # Symlink to nix store path for atomic updates on rebuild
+        "L+ ${dir}/certificate.yml - - - - ${certYaml}"
+      ]) cfg.traefik.certificates);
+
+      dynamicConfigRules = lib.mapAttrsToList (name: value:
+        # Symlink to nix store path for atomic updates on rebuild
+        "L+ ${cfg.dataDir}/traefik/dynamic/${name}.yml - - - - ${yamlFormat.generate "${name}.yml" value}"
+      ) cfg.traefik.dynamicConfig;
+
+      filesDirRules = lib.optionals (cfg.traefik.files != {}) [
+        "d ${cfg.dataDir}/traefik/dynamic/files 0755 root root -"
+      ];
+
+      filesRules = lib.mapAttrsToList (name: value:
+        "C+ ${cfg.dataDir}/traefik/dynamic/files/${name} 0400 root root - ${value}"
+      ) cfg.traefik.files;
+    in
       [
         "d ${cfg.dataDir} 0777 root root -"
         "d ${cfg.dataDir}/traefik 0755 root root -"
@@ -266,7 +339,11 @@ in {
       ]
       ++ lib.optionals (cfg.dataDir != "/etc/dokploy") [
         "L /etc/dokploy - - - - ${cfg.dataDir}"
-      ];
+      ]
+      ++ certRules
+      ++ dynamicConfigRules
+      ++ filesDirRules
+      ++ filesRules;
 
     systemd.services.dokploy-stack = {
       description = "Dokploy Docker Swarm Stack";

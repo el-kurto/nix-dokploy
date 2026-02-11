@@ -47,6 +47,17 @@ in {
       '';
     };
 
+    environment = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      default = {};
+      description = ''
+        Environment variables to pass to the Dokploy container.
+      '';
+      example = {
+        TZ = "Europe/Amsterdam";
+      };
+    };
+
     port = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = "3000:3000";

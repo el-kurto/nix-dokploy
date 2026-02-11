@@ -45,7 +45,7 @@
       image = cfg.image;
       environment = {
         ADVERTISE_ADDR = "\${ADVERTISE_ADDR}";
-      };
+      } // cfg.environment;
       networks = {
         dokploy-network = {
           aliases = ["dokploy-app"];

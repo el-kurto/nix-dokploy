@@ -81,6 +81,26 @@ in {
       '';
     };
 
+    hostPortMode = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = ''
+        Use "host" port publishing mode instead of the default "ingress" mode.
+        Host mode binds ports directly on the host, bypassing the Swarm routing mesh.
+        More efficient for single-node setups.
+      '';
+    };
+
+    lxc = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = ''
+        Enable compatibility mode for LXC containers (e.g. Proxmox).
+        Adds "endpoint_mode: dnsrr" to the Dokploy service deployment configuration.
+        This is required for Docker Swarm networking to work correctly inside LXC.
+      '';
+    };
+
     traefik = {
       image = lib.mkOption {
         type = lib.types.str;

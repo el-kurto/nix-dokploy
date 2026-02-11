@@ -65,9 +65,25 @@
           order = "stop-first";
         };
         restart_policy.condition = "any";
+      } // lib.optionalAttrs cfg.lxc {
+        endpoint_mode = "dnsrr";
       };
     } // lib.optionalAttrs (cfg.port != null) {
-      ports = [ cfg.port ];
+      ports = let
+        parts = lib.splitString ":" cfg.port;
+        len = builtins.length parts;
+      in
+        if cfg.hostPortMode
+        then [
+          ({
+            target = lib.strings.toInt (lib.last parts);
+            published = lib.strings.toInt (builtins.elemAt parts (len - 2));
+            mode = "host";
+          } // lib.optionalAttrs (len == 3) {
+            host_ip = builtins.head parts;
+          })
+        ]
+        else [cfg.port];
     };
   };
 

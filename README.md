@@ -62,10 +62,13 @@ That's it! Dokploy will be available at `http://your-server-ip:3000`
 | Option | Default | Description |
 |--------|---------|-------------|
 | `services.dokploy.dataDir` | `/var/lib/dokploy` | Data directory for Dokploy |
-| `services.dokploy.image` | `dokploy/dokploy:v0.25.11` | Dokploy Docker image |
+| `services.dokploy.image` | `dokploy/dokploy:v0.26.7` | Dokploy Docker image |
 | `services.dokploy.port` | `"3000:3000"` | Port binding for web UI (⚠️ see note) |
+| `services.dokploy.hostPortMode` | `false` | Use "host" port mode instead of "ingress" (bypasses Swarm routing mesh) |
+| `services.dokploy.lxc` | `false` | Enable LXC compatibility (required for Proxmox) |
 | `services.dokploy.environment` | `{}` | Environment variables for Dokploy container |
-| `services.dokploy.traefik.image` | `traefik:v3.6.1` | Traefik Docker image |
+| `services.dokploy.traefik.image` | `traefik:v3.6.7` | Traefik Docker image |
+| `services.dokploy.traefik.extraArgs` | `[]` | Extra `docker run` flags for Traefik container |
 | `services.dokploy.swarm.autoRecreate` | `false` | Auto-recreate swarm when IP change is detected during service restart |
 
 ### Swarm Advertise Address
@@ -130,6 +133,18 @@ services.dokploy.port = "3000:3000";
 
 # Disable direct port access (access through Traefik only)
 services.dokploy.port = null;
+```
+
+### Traefik Extra Arguments
+
+Pass extra `docker run` flags to the Traefik container:
+
+```nix
+services.dokploy.traefik.extraArgs = [
+  "-e CF_API_EMAIL=user@example.com"
+  "-e CF_API_KEY=your_api_key"
+  "-v /path/to/certs:/certs"
+];
 ```
 
 ## 📄 License

@@ -164,6 +164,8 @@ services.dokploy.database.passwordFile = "/var/lib/secrets/dokploy-db-password";
 
 **Upgrading from the old hardcoded password:** Versions before v0.26.6 used a hardcoded PostgreSQL password (`amukds4wi9001583845717ad2`). To migrate:
 
+> **Important:** Complete these steps in order. Do not deploy the new version before changing the password — the old stack must still be running for step 2.
+
 1. Generate a new password file on the host:
    ```bash
    openssl rand -base64 32 > /var/lib/secrets/dokploy-db-password

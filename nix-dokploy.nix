@@ -403,8 +403,7 @@ in {
                   -p 80:80/tcp \
                   -p 443:443/tcp \
                   -p 443:443/udp \
-                  ${lib.concatStringsSep " \\\n" cfg.traefik.extraArgs} \
-                  ${cfg.traefik.image}
+                  ${lib.concatStringsSep " \\\n  " (cfg.traefik.extraArgs ++ [cfg.traefik.image])}
               fi
             '';
           };

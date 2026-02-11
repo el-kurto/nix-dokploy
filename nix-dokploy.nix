@@ -211,6 +211,14 @@ in {
         message = "Dokploy stack does not support rootless Docker";
       }
       {
+        assertion = !(cfg.swarm.autoRecreate && cfg.database.passwordFile == null);
+        message = ''
+          swarm.autoRecreate requires database.passwordFile to be set.
+          Without a password file, swarm teardown destroys the auto-generated
+          Docker secret, but the PostgreSQL data volume retains the old password.
+        '';
+      }
+      {
         assertion = cfg.database.password == null;
         message = ''
           services.dokploy.database.password has been removed.

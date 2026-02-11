@@ -91,6 +91,15 @@ in {
           Changing this may cause compatibility issues with Dokploy.
         '';
       };
+
+      extraArgs = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [];
+        description = ''
+          Extra arguments to pass to the Traefik container's docker run command.
+          Can be used to pass environment variables, volumes, etc.
+        '';
+      };
     };
 
     swarm = {
@@ -278,14 +287,14 @@ in {
 
               ADVERTISE_ADDR="$advertise_addr" \
               POSTGRES_PASSWORD="${cfg.database.password}" \
-              docker stack deploy -c ${stackFile} dokploy
+              docker stack deploy -c ${stackFile} --detach=false dokploy
             '';
           };
         in "${script}/bin/dokploy-stack-start";
 
         ExecStop = let
           script = pkgs.writeShellScript "dokploy-stack-stop" ''
-            ${pkgs.docker}/bin/docker stack rm dokploy || true
+            ${pkgs.docker}/bin/docker stack rm --detach=false dokploy || true
           '';
         in "${script}";
       };
@@ -307,6 +316,18 @@ in {
             name = "dokploy-traefik-start";
             runtimeInputs = [pkgs.docker];
             text = ''
+              echo "Waiting for Dokploy to generate Traefik configuration..."
+              timeout=60
+              while [ ! -f "${cfg.dataDir}/traefik/traefik.yml" ]; do
+                sleep 1
+                timeout=$((timeout - 1))
+                if [ "$timeout" -le 0 ]; then
+                  echo "Error: Timed out waiting for traefik.yml"
+                  exit 1
+                fi
+              done
+              echo "Traefik configuration found."
+
               if docker ps -a --format '{{.Names}}' | grep -q '^dokploy-traefik$'; then
                 echo "Starting existing Traefik container..."
                 docker start dokploy-traefik
@@ -322,6 +343,7 @@ in {
                   -p 80:80/tcp \
                   -p 443:443/tcp \
                   -p 443:443/udp \
+                  ${lib.concatStringsSep " \\\n" cfg.traefik.extraArgs} \
                   ${cfg.traefik.image}
               fi
             '';

@@ -6,9 +6,28 @@
 }: let
   cfg = config.services.dokploy;
 
+  useSecrets = !cfg.database.useInsecureHardcodedPassword;
+
   stackConfig = import ./dokploy-stack.nix {inherit cfg lib;};
   yamlFormat = pkgs.formats.yaml {};
   stackFile = yamlFormat.generate "dokploy-stack.yml" stackConfig;
+
+  deploySnippet =
+    if useSecrets
+    then ''
+      if ! docker secret inspect dokploy_postgres_password >/dev/null 2>&1; then
+        echo "Creating Docker secret from password file..."
+        docker secret create dokploy_postgres_password "${cfg.database.passwordFile}"
+      fi
+
+      ADVERTISE_ADDR="$advertise_addr" \
+      docker stack deploy -c ${stackFile} --detach=false dokploy
+    ''
+    else lib.warn "nix-dokploy: database.useInsecureHardcodedPassword is enabled. This uses a well-known password from Dokploy's source code. Migrate to database.passwordFile as soon as possible." ''
+      ADVERTISE_ADDR="$advertise_addr" \
+      POSTGRES_PASSWORD="amukds4wi9001583845717ad2" \
+      docker stack deploy -c ${stackFile} --detach=false dokploy
+    '';
 in {
   options.services.dokploy = {
     enable = lib.mkOption {
@@ -24,11 +43,14 @@ in {
     };
 
     database = {
-      password = lib.mkOption {
-        type = lib.types.nullOr lib.types.str;
-        default = null;
-        visible = false;
-        description = "Deprecated. Use database.passwordFile instead.";
+      useInsecureHardcodedPassword = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = ''
+          Use the old hardcoded PostgreSQL password from Dokploy's source code.
+          This is insecure and only intended as a temporary migration aid for
+          existing installations. Set database.passwordFile instead.
+        '';
       };
 
       passwordFile = lib.mkOption {
@@ -38,7 +60,7 @@ in {
           Path to a file containing the PostgreSQL password for Dokploy.
           The file must be readable by root and will be used as a Docker secret.
 
-          If not set, a random password is generated automatically on first deploy.
+          Required unless database.useInsecureHardcodedPassword is enabled.
         '';
         example = "/var/lib/secrets/dokploy-db-password";
       };
@@ -211,26 +233,23 @@ in {
         message = "Dokploy stack does not support rootless Docker";
       }
       {
-        assertion = !(cfg.swarm.autoRecreate && cfg.database.passwordFile == null);
+        assertion = cfg.database.passwordFile != null || !useSecrets;
         message = ''
-          swarm.autoRecreate requires database.passwordFile to be set.
-          Without a password file, swarm teardown destroys the auto-generated
-          Docker secret, but the PostgreSQL data volume retains the old password.
+          Dokploy now uses Docker secrets for the PostgreSQL password.
+          You must set one of:
+
+            services.dokploy.database.passwordFile = "/var/lib/secrets/dokploy-db-password";
+
+          Or, to continue using the old hardcoded password temporarily:
+
+            services.dokploy.database.useInsecureHardcodedPassword = true;
+
+          See the "Database Password" section in the README for migration steps.
         '';
       }
       {
-        assertion = cfg.database.password == null;
-        message = ''
-          services.dokploy.database.password has been removed.
-          Dokploy now uses Docker secrets for the PostgreSQL password.
-
-          To migrate:
-          1. Generate a password file: openssl rand -base64 32 > /var/lib/secrets/dokploy-db-password
-          2. ALTER USER in the running postgres container (see README for details)
-          3. Replace database.password with: database.passwordFile = "/var/lib/secrets/dokploy-db-password";
-
-          See the "Database Password" section in the nix-dokploy README for full instructions.
-        '';
+        assertion = !(cfg.database.passwordFile != null && !useSecrets);
+        message = "Cannot set both database.passwordFile and database.useInsecureHardcodedPassword";
       }
     ];
 
@@ -258,7 +277,7 @@ in {
             name = "dokploy-stack-start";
             excludeShellChecks = ["SC2034"];
             runtimeInputs =
-              [pkgs.curl pkgs.docker pkgs.hostname pkgs.gawk pkgs.openssl]
+              [pkgs.curl pkgs.docker pkgs.hostname pkgs.gawk]
               ++ (
                 if cfg.swarm.advertiseAddress ? extraPackages
                 then cfg.swarm.advertiseAddress.extraPackages
@@ -332,22 +351,7 @@ in {
                 ''
               }
 
-              if ! docker secret inspect dokploy_postgres_password >/dev/null 2>&1; then
-                ${
-                  if cfg.database.passwordFile != null
-                  then ''
-                    echo "Creating Docker secret from password file..."
-                    docker secret create dokploy_postgres_password "${cfg.database.passwordFile}"
-                  ''
-                  else ''
-                    echo "No password file configured, generating random password..."
-                    openssl rand -base64 32 | docker secret create dokploy_postgres_password -
-                  ''
-                }
-              fi
-
-              ADVERTISE_ADDR="$advertise_addr" \
-              docker stack deploy -c ${stackFile} --detach=false dokploy
+              ${deploySnippet}
             '';
           };
         in "${script}/bin/dokploy-stack-start";

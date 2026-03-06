@@ -46,6 +46,7 @@ Add to your `flake.nix`:
 
           # Enable Dokploy
           services.dokploy.enable = true;
+          services.dokploy.database.passwordFile = "/var/lib/secrets/dokploy-db-password";
         }
       ];
     };
@@ -53,7 +54,14 @@ Add to your `flake.nix`:
 }
 ```
 
-That's it! Dokploy will be available at `http://your-server-ip:3000`
+Generate a password file on the host before deploying:
+
+```bash
+mkdir -p /var/lib/secrets
+openssl rand -base64 32 > /var/lib/secrets/dokploy-db-password
+```
+
+Dokploy will be available at `http://your-server-ip:3000`
 
 ## ⚙️ Configuration Options
 
@@ -66,7 +74,8 @@ That's it! Dokploy will be available at `http://your-server-ip:3000`
 | `services.dokploy.port` | `"3000:3000"` | Port binding for web UI (⚠️ see note) |
 | `services.dokploy.hostPortMode` | `false` | Use "host" port mode instead of "ingress" (bypasses Swarm routing mesh) |
 | `services.dokploy.lxc` | `false` | Enable LXC compatibility (required for Proxmox) |
-| `services.dokploy.database.passwordFile` | `null` | Path to file containing the PostgreSQL password (auto-generated if unset) |
+| `services.dokploy.database.passwordFile` | — (required) | Path to file containing the PostgreSQL password |
+| `services.dokploy.database.useInsecureHardcodedPassword` | `false` | Use old hardcoded password (migration aid only, see below) |
 | `services.dokploy.environment` | `{}` | Environment variables for Dokploy container |
 | `services.dokploy.traefik.image` | `traefik:v3.6.7` | Traefik Docker image |
 | `services.dokploy.traefik.extraArgs` | `[]` | Extra `docker run` flags for Traefik container |
@@ -150,9 +159,7 @@ services.dokploy.traefik.extraArgs = [
 
 ### Database Password
 
-The PostgreSQL password is stored as a Docker secret. By default, a random password is generated automatically on first deploy.
-
-To manage the password yourself (recommended for production):
+The PostgreSQL password is stored as a Docker secret. `database.passwordFile` is required and must point to a file containing the password.
 
 ```bash
 openssl rand -base64 32 > /var/lib/secrets/dokploy-db-password
@@ -162,9 +169,23 @@ openssl rand -base64 32 > /var/lib/secrets/dokploy-db-password
 services.dokploy.database.passwordFile = "/var/lib/secrets/dokploy-db-password";
 ```
 
-**Upgrading from the old hardcoded password:** Versions before v0.26.6 used a hardcoded PostgreSQL password (`amukds4wi9001583845717ad2`). To migrate:
+#### Upgrading from the old hardcoded password
 
-> **Important:** Complete these steps in order. Do not deploy the new version before changing the password — the old stack must still be running for step 2.
+Previous versions used a hardcoded PostgreSQL password. On upgrade, `nixos-rebuild` will fail with an error asking you to either set `database.passwordFile` or enable `database.useInsecureHardcodedPassword`.
+
+**Option A: Keep the old password temporarily**
+
+If you're not ready to migrate, add this to unblock the upgrade:
+
+```nix
+services.dokploy.database.useInsecureHardcodedPassword = true;
+```
+
+This continues using the old hardcoded password. A build warning will remind you to migrate.
+
+**Option B: Migrate to a secure password**
+
+> Complete these steps in order. The old stack must still be running for step 2.
 
 1. Generate a new password file on the host:
    ```bash
@@ -180,9 +201,14 @@ services.dokploy.database.passwordFile = "/var/lib/secrets/dokploy-db-password";
      -c "ALTER USER dokploy WITH PASSWORD :'pw'"
    ```
 
-3. Deploy with `database.passwordFile` set to the new password file.
+3. Deploy with `database.passwordFile` set:
+   ```nix
+   services.dokploy.database.passwordFile = "/var/lib/secrets/dokploy-db-password";
+   ```
 
-**Recovery:** If the password gets into a bad state, SSH to the host and get a local superuser shell (no password needed):
+#### Recovery
+
+If the password gets into a bad state, you can get a local superuser shell (no password needed):
 
 ```bash
 docker exec -it $(docker ps --filter "name=dokploy_postgres" -q) psql -U dokploy -d dokploy

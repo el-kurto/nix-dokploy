@@ -68,7 +68,7 @@ in {
 
     image = lib.mkOption {
       type = lib.types.str;
-      default = "dokploy/dokploy:v0.26.7";
+      default = "dokploy/dokploy:v0.28.4";
       description = ''
         Dokploy Docker image to use.
       '';
@@ -388,7 +388,7 @@ in {
             runtimeInputs = [pkgs.docker];
             text = ''
               echo "Waiting for Dokploy to generate Traefik configuration..."
-              timeout=60
+              timeout=120
               while [ ! -f "${cfg.dataDir}/traefik/traefik.yml" ]; do
                 sleep 1
                 timeout=$((timeout - 1))

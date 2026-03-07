@@ -70,7 +70,7 @@ Dokploy will be available at `http://your-server-ip:3000`
 | Option | Default | Description |
 |--------|---------|-------------|
 | `services.dokploy.dataDir` | `/var/lib/dokploy` | Data directory for Dokploy |
-| `services.dokploy.image` | `dokploy/dokploy:v0.26.7` | Dokploy Docker image |
+| `services.dokploy.image` | `dokploy/dokploy:v0.28.4` | Dokploy Docker image |
 | `services.dokploy.port` | `"3000:3000"` | Port binding for web UI (see note) |
 | `services.dokploy.hostPortMode` | `false` | Use "host" port mode instead of "ingress" (bypasses Swarm routing mesh) |
 | `services.dokploy.lxc` | `false` | Enable LXC compatibility (required for Proxmox) |

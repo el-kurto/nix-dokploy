@@ -251,6 +251,13 @@ in {
         assertion = !(cfg.database.passwordFile != null && !useSecrets);
         message = "Cannot set both database.passwordFile and database.useInsecureHardcodedPassword";
       }
+      {
+        assertion = let
+          parts = lib.splitString ":" cfg.port;
+          len = builtins.length parts;
+        in !cfg.hostPortMode || cfg.port == null || (len == 2 || len == 3);
+        message = "services.dokploy.port must be in \"host:container\" or \"ip:host:container\" format when hostPortMode is enabled";
+      }
     ];
 
     systemd.tmpfiles.rules =

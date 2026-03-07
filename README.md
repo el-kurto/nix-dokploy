@@ -197,8 +197,8 @@ This continues using the old hardcoded password. A build warning will remind you
    NEW_PW=$(cat /var/lib/secrets/dokploy-db-password)
    docker exec -e PGPASSWORD=amukds4wi9001583845717ad2 \
      $(docker ps --filter "name=dokploy_postgres" -q) \
-     psql -U dokploy -d dokploy -v "pw=$NEW_PW" \
-     -c "ALTER USER dokploy WITH PASSWORD :'pw'"
+     psql -U dokploy -d dokploy \
+     -c "ALTER USER dokploy WITH PASSWORD '$NEW_PW'"
    ```
 
 3. Deploy with `database.passwordFile` set:
@@ -212,8 +212,9 @@ Docker secrets are immutable, so the deploy script won't update an existing secr
 
 1. Change the password in the running PostgreSQL container (same as step 2 of the migration above)
 2. Write the new password to the file at `database.passwordFile`
-3. Remove the old Docker secret: `docker secret rm dokploy_postgres_password`
-4. Redeploy with `nixos-rebuild switch`
+3. Remove the stack so the secret is no longer in use: `docker stack rm dokploy`
+4. Remove the old Docker secret: `docker secret rm dokploy_postgres_password`
+5. Redeploy with `nixos-rebuild switch`
 
 #### Recovery
 

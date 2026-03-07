@@ -315,12 +315,10 @@ in {
         "d ${dir} 0755 root root -"
         "C+ ${dir}/chain.crt 0400 root root - ${cert.certFile}"
         "C+ ${dir}/privkey.key 0400 root root - ${cert.keyFile}"
-        # Symlink to nix store path for atomic updates on rebuild
         "C+ ${dir}/certificate.yml - - - - ${certYaml}"
       ]) cfg.traefik.certificates);
 
       dynamicConfigRules = lib.mapAttrsToList (name: value:
-        # Symlink to nix store path for atomic updates on rebuild
         "C+ ${cfg.dataDir}/traefik/dynamic/${name}.yml - - - - ${yamlFormat.generate "${name}.yml" value}"
       ) cfg.traefik.dynamicConfig;
 

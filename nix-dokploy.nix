@@ -54,7 +54,7 @@ in {
       };
 
       passwordFile = lib.mkOption {
-        type = lib.types.nullOr lib.types.path;
+        type = lib.types.nullOr lib.types.str;
         default = null;
         description = ''
           Path to a file containing the PostgreSQL password for Dokploy.
@@ -407,7 +407,7 @@ in {
                   -p 80:80/tcp \
                   -p 443:443/tcp \
                   -p 443:443/udp \
-                  ${lib.concatStringsSep " \\\n  " (cfg.traefik.extraArgs ++ [cfg.traefik.image])}
+                  ${lib.concatMapStringsSep " \\\n  " lib.escapeShellArg (cfg.traefik.extraArgs ++ [cfg.traefik.image])}
               fi
             '';
           };

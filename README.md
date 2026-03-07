@@ -206,6 +206,15 @@ This continues using the old hardcoded password. A build warning will remind you
    services.dokploy.database.passwordFile = "/var/lib/secrets/dokploy-db-password";
    ```
 
+#### Rotating the password
+
+Docker secrets are immutable, so the deploy script won't update an existing secret. To rotate the password:
+
+1. Change the password in the running PostgreSQL container (same as step 2 of the migration above)
+2. Write the new password to the file at `database.passwordFile`
+3. Remove the old Docker secret: `docker secret rm dokploy_postgres_password`
+4. Redeploy with `nixos-rebuild switch`
+
 #### Recovery
 
 If the password gets into a bad state, you can get a local superuser shell (no password needed):

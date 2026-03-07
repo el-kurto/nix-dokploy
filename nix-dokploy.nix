@@ -15,6 +15,11 @@
   deploySnippet =
     if useSecrets
     then ''
+      if [ ! -f "${cfg.database.passwordFile}" ]; then
+        echo "Error: password file not found: ${cfg.database.passwordFile}"
+        exit 1
+      fi
+
       if ! docker secret inspect dokploy_postgres_password >/dev/null 2>&1; then
         echo "Creating Docker secret from password file..."
         docker secret create dokploy_postgres_password "${cfg.database.passwordFile}"

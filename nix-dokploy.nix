@@ -313,15 +313,15 @@ in {
         };
       in [
         "d ${dir} 0755 root root -"
-        "L+ ${dir}/chain.crt - - - - ${cert.certFile}"
-        "L+ ${dir}/privkey.key - - - - ${cert.keyFile}"
+        "C+ ${dir}/chain.crt 0400 root root - ${cert.certFile}"
+        "C+ ${dir}/privkey.key 0400 root root - ${cert.keyFile}"
         # Symlink to nix store path for atomic updates on rebuild
-        "L+ ${dir}/certificate.yml - - - - ${certYaml}"
+        "C+ ${dir}/certificate.yml - - - - ${certYaml}"
       ]) cfg.traefik.certificates);
 
       dynamicConfigRules = lib.mapAttrsToList (name: value:
         # Symlink to nix store path for atomic updates on rebuild
-        "L+ ${cfg.dataDir}/traefik/dynamic/${name}.yml - - - - ${yamlFormat.generate "${name}.yml" value}"
+        "C+ ${cfg.dataDir}/traefik/dynamic/${name}.yml - - - - ${yamlFormat.generate "${name}.yml" value}"
       ) cfg.traefik.dynamicConfig;
 
       filesDirRules = lib.optionals (cfg.traefik.files != {}) [
@@ -329,7 +329,7 @@ in {
       ];
 
       filesRules = lib.mapAttrsToList (name: value:
-        "L+ ${cfg.dataDir}/traefik/dynamic/files/${name} - - - - ${value}"
+        "C+ ${cfg.dataDir}/traefik/dynamic/files/${name} - - - - ${value}"
       ) cfg.traefik.files;
     in
       [

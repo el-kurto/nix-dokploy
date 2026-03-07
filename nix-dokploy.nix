@@ -238,7 +238,7 @@ in {
         message = "Dokploy stack does not support rootless Docker";
       }
       {
-        assertion = cfg.database.passwordFile != null || !useSecrets;
+        assertion = cfg.database.passwordFile != null || cfg.database.useInsecureHardcodedPassword;
         message = ''
           Dokploy now uses Docker secrets for the PostgreSQL password.
           You must set one of:
@@ -253,15 +253,8 @@ in {
         '';
       }
       {
-        assertion = !(cfg.database.passwordFile != null && !useSecrets);
+        assertion = !(cfg.database.passwordFile != null && cfg.database.useInsecureHardcodedPassword);
         message = "Cannot set both database.passwordFile and database.useInsecureHardcodedPassword";
-      }
-      {
-        assertion = let
-          parts = lib.splitString ":" cfg.port;
-          len = builtins.length parts;
-        in !cfg.hostPortMode || cfg.port == null || (len == 2 || len == 3);
-        message = "services.dokploy.port must be in \"host:container\" or \"ip:host:container\" format when hostPortMode is enabled";
       }
     ];
 

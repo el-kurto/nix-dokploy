@@ -4,9 +4,9 @@
 
 A **NixOS module** that runs [Dokploy](https://dokploy.com/) (a self-hosted PaaS / deployment platform) using declarative systemd units.
 
-⚠️ This module is **NixOS-only**. It integrates directly with `systemd.services` and `systemd.tmpfiles`, so it will not work on nix-darwin, home-manager, or plain nixpkgs environments.
+This module is **NixOS-only**. It integrates directly with `systemd.services` and `systemd.tmpfiles`, so it will not work on nix-darwin, home-manager, or plain nixpkgs environments.
 
-## ✨ Features
+## Features
 
 - `dokploy-stack.service` and `dokploy-traefik.service` systemd units
 - Proper service ordering (`docker.service` → `dokploy-stack.service` → `dokploy-traefik.service`)
@@ -18,13 +18,13 @@ A **NixOS module** that runs [Dokploy](https://dokploy.com/) (a self-hosted PaaS
 ![Service Status](./Readme/systemctl-status-dokploy.png)
 ![Docker Stack](./Readme/docker-stack-ps-dokploy.png)
 
-## 📋 Requirements
+## Requirements
 
 - Docker must be enabled
 - Docker live-restore must be disabled (required for swarm)
 - Rootless Docker is not supported (swarm limitation)
 
-## 🚀 Quick Start
+## Quick Start
 
 Add to your `flake.nix`:
 
@@ -63,7 +63,7 @@ openssl rand -base64 32 > /var/lib/secrets/dokploy-db-password
 
 Dokploy will be available at `http://your-server-ip:3000`
 
-## ⚙️ Configuration Options
+## Configuration Options
 
 ### Basic Options
 
@@ -71,7 +71,7 @@ Dokploy will be available at `http://your-server-ip:3000`
 |--------|---------|-------------|
 | `services.dokploy.dataDir` | `/var/lib/dokploy` | Data directory for Dokploy |
 | `services.dokploy.image` | `dokploy/dokploy:v0.26.7` | Dokploy Docker image |
-| `services.dokploy.port` | `"3000:3000"` | Port binding for web UI (⚠️ see note) |
+| `services.dokploy.port` | `"3000:3000"` | Port binding for web UI (see note) |
 | `services.dokploy.hostPortMode` | `false` | Use "host" port mode instead of "ingress" (bypasses Swarm routing mesh) |
 | `services.dokploy.lxc` | `false` | Enable LXC compatibility (required for Proxmox) |
 | `services.dokploy.database.passwordFile` | — (required) | Path to file containing the PostgreSQL password |
@@ -131,7 +131,7 @@ For single-node setups (the most common case), the default `"private"` setting s
 
 ### Web UI Port Configuration
 
-⚠️ **Recommendation**: Disable port 3000 once Traefik is configured to reverse proxy Dokploy.
+**Recommendation**: Disable port 3000 once Traefik is configured to reverse proxy Dokploy.
 
 1. Deploy with default port for initial configuration
 2. Access Dokploy UI and configure Traefik reverse proxy
@@ -214,7 +214,7 @@ If the password gets into a bad state, you can get a local superuser shell (no p
 docker exec -it $(docker ps --filter "name=dokploy_postgres" -q) psql -U dokploy -d dokploy
 ```
 
-## 📄 License
+## License
 
 This NixOS module is licensed under the [MIT License](./LICENSE) - use it freely without restrictions.
 

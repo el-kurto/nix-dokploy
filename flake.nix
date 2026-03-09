@@ -32,6 +32,19 @@
           ];
         };
         formatter = pkgs.alejandra;
+
+        checks.fmt = pkgs.stdenvNoCC.mkDerivation {
+          name = "fmt-check";
+          src = self;
+          dontBuild = true;
+          doCheck = true;
+          nativeBuildInputs = [pkgs.alejandra];
+          checkPhase = ''
+            cd "$src"
+            alejandra --check .
+          '';
+          installPhase = ''mkdir -p "$out"'';
+        };
       }
     );
 }

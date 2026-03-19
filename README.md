@@ -31,6 +31,7 @@ NixOS-only — uses `systemd.services` and `systemd.tmpfiles` directly.
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nix-dokploy.url = "github:el-kurto/nix-dokploy";
+    nix-dokploy.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs = { self, nixpkgs, nix-dokploy, ... }: {

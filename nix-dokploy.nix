@@ -337,7 +337,7 @@ in {
         cfg.traefik.files;
     in
       [
-        "d ${cfg.dataDir} 0777 root root -"
+        "d ${cfg.dataDir} 0700 root root -"
         "d ${cfg.dataDir}/traefik 0755 root root -"
         "d ${cfg.dataDir}/traefik/dynamic 0755 root root -"
       ]

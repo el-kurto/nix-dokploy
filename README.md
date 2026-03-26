@@ -130,34 +130,38 @@ Complete these steps in order. The old stack must still be running for step 2.
    openssl rand -base64 32 > /var/lib/secrets/dokploy-db-password
    ```
 
-2. Change the password in the running PostgreSQL container:
+2. Change the password in the running PostgreSQL container. As root, open a psql shell:
    ```bash
-   NEW_PW=$(cat /var/lib/secrets/dokploy-db-password)
-   docker exec -e PGPASSWORD=amukds4wi9001583845717ad2 \
-     $(docker ps --filter "name=dokploy_postgres" -q) \
-     psql -U dokploy -d dokploy \
-     -c "ALTER USER dokploy WITH PASSWORD '$NEW_PW'"
+   docker exec -it $(docker ps --filter "name=dokploy_postgres" -q) psql -U dokploy -d dokploy
    ```
+   Then set the password to match the contents of your password file:
+   ```sql
+   ALTER USER dokploy WITH PASSWORD 'contents-of-password-file';
+   ```
+
+   > Do not pass the password via command-line flags or environment variables — it
+   > will be visible in the process list.
 
 3. Deploy with `database.passwordFile` set.
 
 #### Rotating the password
 
-Docker secrets are immutable, so the deploy script won't update an existing secret. To rotate:
+Docker secrets are immutable, so the deploy script won't update an existing secret. To rotate, run these steps as root:
 
-1. Change the password in the running PostgreSQL container (same as step 2 above)
-2. Write the new password to `database.passwordFile`
+1. Generate a new password file:
+   ```bash
+   openssl rand -base64 32 > /var/lib/secrets/dokploy-db-password
+   ```
+2. Change the password in the running PostgreSQL container:
+   ```bash
+   docker exec -it $(docker ps --filter "name=dokploy_postgres" -q) psql -U dokploy -d dokploy
+   ```
+   ```sql
+   ALTER USER dokploy WITH PASSWORD 'contents-of-password-file';
+   ```
 3. Remove the stack: `docker stack rm dokploy`
 4. Remove the old secret: `docker secret rm dokploy_postgres_password`
 5. Redeploy with `nixos-rebuild switch`
-
-#### Recovery
-
-Local superuser shell (no password needed):
-
-```bash
-docker exec -it $(docker ps --filter "name=dokploy_postgres" -q) psql -U dokploy -d dokploy
-```
 
 ### Swarm
 

@@ -137,11 +137,9 @@ in {
     traefik = {
       image = lib.mkOption {
         type = lib.types.str;
-        default = "traefik:v3.6.7";
+        default = "traefik:v3.6.13";
         description = ''
           Traefik Docker image to use.
-          Default matches the version pinned in Dokploy's installation script.
-          Changing this may cause compatibility issues with Dokploy.
         '';
       };
 

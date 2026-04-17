@@ -190,7 +190,7 @@ Using `"public"` exposes swarm management ports (2377, 7946, 4789) to the intern
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `traefik.image` | `traefik:v3.6.7` | Traefik Docker image |
+| `traefik.image` | `traefik:v3.6.13` | Traefik Docker image |
 | `traefik.extraArgs` | `[]` | Extra `docker run` flags |
 | `traefik.certificates` | `{}` | TLS certificate pairs |
 | `traefik.dynamicConfig` | `{}` | Dynamic config as Nix attrsets (generates YAML) |

@@ -312,15 +312,15 @@ in {
           };
         in [
           "d ${dir} 0755 root root -"
-          "C+ ${dir}/chain.crt 0400 root root - ${cert.certFile}"
-          "C+ ${dir}/privkey.key 0400 root root - ${cert.keyFile}"
-          "C+ ${dir}/certificate.yml - - - - ${certYaml}"
+          "L+ ${dir}/chain.crt - - - - ${cert.certFile}"
+          "L+ ${dir}/privkey.key - - - - ${cert.keyFile}"
+          "L+ ${dir}/certificate.yml - - - - ${certYaml}"
         ])
         cfg.traefik.certificates);
 
       dynamicConfigRules =
         lib.mapAttrsToList (
-          name: value: "C+ ${cfg.dataDir}/traefik/dynamic/${name}.yml - - - - ${yamlFormat.generate "${name}.yml" value}"
+          name: value: "L+ ${cfg.dataDir}/traefik/dynamic/${name}.yml - - - - ${yamlFormat.generate "${name}.yml" value}"
         )
         cfg.traefik.dynamicConfig;
 
@@ -330,7 +330,7 @@ in {
 
       filesRules =
         lib.mapAttrsToList (
-          name: value: "C+ ${cfg.dataDir}/traefik/dynamic/files/${name} - - - - ${value}"
+          name: value: "L+ ${cfg.dataDir}/traefik/dynamic/files/${name} - - - - ${value}"
         )
         cfg.traefik.files;
     in

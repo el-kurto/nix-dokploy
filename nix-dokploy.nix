@@ -147,7 +147,7 @@ in {
 
     image = lib.mkOption {
       type = lib.types.str;
-      default = "dokploy/dokploy:v0.29.14";
+      default = "dokploy/dokploy:v0.30.2";
       description = ''
         Dokploy Docker image to use.
       '';

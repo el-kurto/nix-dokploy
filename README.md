@@ -71,7 +71,7 @@ Dokploy will be available at `http://your-server-ip:3000`
 | Option | Default | Description |
 |--------|---------|-------------|
 | `dataDir` | `/var/lib/dokploy` | Data directory |
-| `image` | `dokploy/dokploy:v0.29.14` | Dokploy Docker image |
+| `image` | `dokploy/dokploy:v0.30.2` | Dokploy Docker image |
 | `environment` | `{}` | Environment variables for the Dokploy container |
 | `lxc` | `false` | LXC compatibility mode (e.g. Proxmox) |
 

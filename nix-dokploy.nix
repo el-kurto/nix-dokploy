@@ -169,7 +169,6 @@ in {
       default = "3000:3000";
       example = lib.literalExpression ''
         "3000:3000"                 # Default: expose on all interfaces (Docker bypasses firewall!)
-        "127.0.0.1:3000:3000"       # Localhost only (secure, requires reverse proxy)
         "8080:3000"                 # Custom external port
         null                        # Disable direct access (use Traefik only)
       '';
@@ -179,11 +178,12 @@ in {
         WARNING: Docker bypasses host firewall rules. Setting "3000:3000" exposes
         the port to the internet regardless of firewall configuration.
 
-        Secure options:
-        - Set to "127.0.0.1:3000:3000" for localhost-only access
-        - Set to null to disable direct access (configure reverse proxy in Dokploy UI)
+        Swarm publishes on every interface and cannot bind a host address, so
+        "127.0.0.1:3000:3000" is not localhost-only and is rejected. To limit
+        access, set this to null (configure a reverse proxy in Dokploy UI), or
+        filter the port in the DOCKER-USER iptables chain.
 
-        Format: "[host:]port:containerPort" or null
+        Format: "port:containerPort" or null
       '';
     };
 
@@ -337,6 +337,15 @@ in {
 
   config = lib.mkIf cfg.enable {
     assertions = [
+      {
+        assertion = cfg.port == null || builtins.length (lib.splitString ":" cfg.port) == 2;
+        message = ''
+          services.dokploy.port = "${toString cfg.port}" names a host address.
+          Docker Swarm cannot bind one: in ingress mode it silently publishes on
+          every interface, and in host mode the stack is rejected. Use
+          "port:containerPort", or null to reach Dokploy through Traefik only.
+        '';
+      }
       {
         assertion = config.virtualisation.docker.enable;
         message = "Dokploy requires docker to be enabled";

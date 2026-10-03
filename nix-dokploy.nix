@@ -338,12 +338,13 @@ in {
   config = lib.mkIf cfg.enable {
     assertions = [
       {
-        assertion = cfg.port == null || builtins.length (lib.splitString ":" cfg.port) == 2;
+        assertion = cfg.port == null || builtins.match "[0-9]+:[0-9]+" cfg.port != null;
         message = ''
-          services.dokploy.port = "${toString cfg.port}" names a host address.
-          Docker Swarm cannot bind one: in ingress mode it silently publishes on
-          every interface, and in host mode the stack is rejected. Use
-          "port:containerPort", or null to reach Dokploy through Traefik only.
+          services.dokploy.port = "${cfg.port}" must be "port:containerPort"
+          (e.g. "3000:3000"), or null to reach Dokploy through Traefik only.
+          Host addresses are not supported: Docker Swarm cannot bind one, so in
+          ingress mode it silently publishes on every interface, and in host
+          mode the stack is rejected.
         '';
       }
       {

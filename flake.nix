@@ -42,6 +42,11 @@
           '';
           installPhase = ''mkdir -p "$out"'';
         };
+
+        checks.port = import ./tests/port.nix {
+          inherit nixpkgs pkgs;
+          module = self.nixosModules.default;
+        };
       }
     );
 }

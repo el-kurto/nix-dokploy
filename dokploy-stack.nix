@@ -79,18 +79,14 @@ in {
       // lib.optionalAttrs (cfg.port != null) {
         ports = let
           parts = lib.splitString ":" cfg.port;
-          len = builtins.length parts;
         in
           if cfg.hostPortMode
           then [
-            ({
-                target = lib.strings.toInt (lib.last parts);
-                published = lib.strings.toInt (builtins.elemAt parts (len - 2));
-                mode = "host";
-              }
-              // lib.optionalAttrs (len == 3) {
-                host_ip = builtins.head parts;
-              })
+            {
+              target = lib.strings.toInt (lib.last parts);
+              published = lib.strings.toInt (builtins.head parts);
+              mode = "host";
+            }
           ]
           else [cfg.port];
       };

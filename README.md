@@ -88,7 +88,7 @@ services.dokploy.environment = {
 | `port` | `"3000:3000"` | Port binding for web UI |
 | `hostPortMode` | `false` | Use `"host"` port mode instead of `"ingress"` |
 
-Docker bypasses host firewall rules, so `"3000:3000"` exposes the port to the internet regardless of iptables/nftables.
+Docker bypasses host firewall rules, so `"3000:3000"` exposes the port to the internet regardless of iptables/nftables. Swarm can't bind a host address either: `"127.0.0.1:3000:3000"` would still publish on every interface, so the module rejects it. To limit access, filter the port in the `DOCKER-USER` chain or disable it.
 
 Once Traefik is set up as a reverse proxy, disable direct access:
 

@@ -210,7 +210,7 @@ in {
     traefik = {
       image = lib.mkOption {
         type = lib.types.str;
-        default = "traefik:v3.7.13";
+        default = "traefik:v3.7.16";
         description = ''
           Traefik Docker image to use.
         '';

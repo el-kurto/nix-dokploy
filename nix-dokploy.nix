@@ -147,7 +147,7 @@ in {
 
     image = lib.mkOption {
       type = lib.types.str;
-      default = "dokploy/dokploy:v0.30.8";
+      default = "dokploy/dokploy:v0.30.10";
       description = ''
         Dokploy Docker image to use.
       '';
@@ -210,7 +210,7 @@ in {
     traefik = {
       image = lib.mkOption {
         type = lib.types.str;
-        default = "traefik:v3.7.13";
+        default = "traefik:v3.7.16";
         description = ''
           Traefik Docker image to use.
         '';

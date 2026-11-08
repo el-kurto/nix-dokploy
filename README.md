@@ -71,7 +71,7 @@ Dokploy will be available at `http://your-server-ip:3000`
 | Option | Default | Description |
 |--------|---------|-------------|
 | `dataDir` | `/var/lib/dokploy` | Data directory |
-| `image` | `dokploy/dokploy:v0.30.2` | Dokploy Docker image |
+| `image` | `dokploy/dokploy:v0.31.0` | Dokploy Docker image |
 | `environment` | `{}` | Environment variables for the Dokploy container |
 | `lxc` | `false` | LXC compatibility mode (e.g. Proxmox) |
 
@@ -175,7 +175,7 @@ Using `"public"` exposes swarm management ports (2377, 7946, 4789) to the intern
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `traefik.image` | `traefik:v3.7.11` | Traefik Docker image |
+| `traefik.image` | `traefik:v3.7.17` | Traefik Docker image |
 | `traefik.extraArgs` | `[]` | Extra `docker run` flags |
 | `traefik.certificates` | `{}` | TLS certificate pairs |
 | `traefik.dynamicConfig` | `{}` | Dynamic config as Nix attrsets (generates YAML) |
